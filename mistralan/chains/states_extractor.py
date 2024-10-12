@@ -8,10 +8,19 @@ from pydantic import BaseModel, Field
 from ..schemas import Symptom, PersonalityTrait, EmotionalState
 import time
 
+
 class States(BaseModel):
     symptoms: list[Symptom]
     personality_traits: list[PersonalityTrait]
     emotional_states: list[EmotionalState]
+
+    def describe(self) -> str:
+        return (
+            f"Symptoms: {len(self.symptoms)}\n"
+            f"Personality Traits: {len(self.personality_traits)}\n"
+            f"Emotion: {len(self.emotional_states)}"
+        )
+
 
 SYSTEM_PROMPT = """You are a assistant for a psychologist during a therapy session.
 
@@ -26,28 +35,26 @@ You need to deduct states like emotion, physical symptoms and personality traits
 USER_PROMPT = """Conversation:
 {content}"""
 
+
 class Input(TypedDict):
     content: str
-    
+
+
 StateExtractor = Runnable[Input, States]
 
+
 def get_states_extractor(llm: BaseChatModel) -> StateExtractor:
-    
     def _delay(x):
         time.sleep(5)
         return x
 
     llm_ = llm.with_structured_output(States)
-    
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", SYSTEM_PROMPT),
-            ("human", USER_PROMPT)
-        ]
-    )
 
-    chain = {
-        "content": attrgetter("content")
-    } | RunnableLambda(_delay) | prompt | llm_
-    
-    return chain # type: ignore
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", SYSTEM_PROMPT),
+        ("human", USER_PROMPT),
+    ])
+
+    chain = {"content": attrgetter("content")} | RunnableLambda(_delay) | prompt | llm_
+
+    return chain  # type: ignore
