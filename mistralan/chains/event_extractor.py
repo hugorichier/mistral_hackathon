@@ -5,13 +5,7 @@ from langchain.chat_models.base import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 
-class Event(BaseModel):
-    """An event that occured."""
-    name: str = Field(description="Short name of the event.")
-    start_date: str = Field(None, description="Reference start day of occuring event.")
-    end_date: str | None = Field(None, description="Reference end day of occuring event.")
-    description: str = Field("Short description of the event.")
-    participants: list[str] = Field(description="List of participants in the event, can be individuals or groups of people.")
+from ..schemas import Event
 
 class Events(BaseModel):
     events: list[Event]
@@ -31,7 +25,8 @@ Events are usually concrete, one-time actions or incidents.
 4. Review the list of events, ensure consistency and uniqueness, delete incomplete or irelevant events
 """
 
-USER_PROMPT = """Conversation Date: {date}
+USER_PROMPT = """Patient Name: {patient_name}
+Conversation Date: {date}
 
 {content}
 """
@@ -39,6 +34,7 @@ USER_PROMPT = """Conversation Date: {date}
 class Input(TypedDict):
     date: str
     content: str
+    patient_name: str
 
 def get_event_extractor(llm: BaseChatModel) -> Runnable[Input, Events]:
     
