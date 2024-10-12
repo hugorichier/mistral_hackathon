@@ -5,16 +5,16 @@ from langchain.chat_models.base import BaseChatModel
 from langchain_core.runnables import Runnable
 
 from pydantic import BaseModel, Field
-from ..schemas import emotional_state, personality_trait, symptom
+from ..schemas import Symptom, PersonalityTrait, EmotionalState
 
 class States(BaseModel):
-    symptoms: list[symptom.Symptom]
-    personality_traits: list[personality_trait.PersonalityTrait]
-    emotional_states: list[emotional_state.EmotionalState]
+    symptoms: list[Symptom]
+    personality_traits: list[PersonalityTrait]
+    emotional_states: list[EmotionalState]
 
 SYSTEM_PROMPT = """You are a assistant for a psychologist during a therapy session. 
-                You need to deduct states like emotion, physical symptoms and personality traits from what the patient says. 
-                If you cannot deduct one of these from the prompt give None values"""
+You need to deduct states like emotion, physical symptoms and personality traits from what the patient says. 
+If you cannot deduct one of these from the prompt give None values."""
 
 USER_PROMPT = """{content}"""
 
