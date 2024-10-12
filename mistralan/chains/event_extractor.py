@@ -5,7 +5,9 @@ from langchain.chat_models.base import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 
-from ..schemas import Event
+from operator import attrgetter
+
+from ..schemas import Event, ConversationChunk
 
 class Events(BaseModel):
     events: list[Event]
@@ -31,12 +33,9 @@ Conversation Date: {date}
 {content}
 """
 
-class Input(TypedDict):
-    date: str
-    content: str
-    patient_name: str
+EventExtractor = Runnable[ConversationChunk, Events]
 
-def get_event_extractor(llm: BaseChatModel) -> Runnable[Input, Events]:
+def get_event_extractor(llm: BaseChatModel) -> EventExtractor:
     
     llm_ = llm.with_structured_output(Events)
     
@@ -47,5 +46,11 @@ def get_event_extractor(llm: BaseChatModel) -> Runnable[Input, Events]:
         ]
     )
     
-    return prompt | llm_ # type: ignore
+    chain = {
+        "date": lambda x: x.info.date,
+        "content": attrgetter("content"),
+        "patient_name": lambda x: x.info.patient_name
+    } | prompt | llm_
+    
+    return chain # type: ignore
     

@@ -20,8 +20,10 @@ USER_PROMPT = """{content}"""
 
 class Input(TypedDict):
     content: str
+    
+StateExtractor = Runnable[Input, States]
 
-def get_states_extractor(llm: BaseChatModel) -> Runnable[Input, States]:
+def get_states_extractor(llm: BaseChatModel) -> StateExtractor:
     
     llm_ = llm.with_structured_output(States)
     
