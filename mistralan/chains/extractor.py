@@ -25,3 +25,4 @@ def get_extractor(
             "states": itemgetter("chunk") | state_extractor
         }
     )
+    return chain
