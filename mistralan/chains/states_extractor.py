@@ -3,7 +3,7 @@ from typing import Optional, List, TypedDict
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chat_models.base import BaseChatModel
 from langchain_core.runnables import Runnable
-
+from operator import attrgetter
 from pydantic import BaseModel, Field
 from ..schemas import Symptom, PersonalityTrait, EmotionalState
 
@@ -33,5 +33,9 @@ def get_states_extractor(llm: BaseChatModel) -> StateExtractor:
             ("human", USER_PROMPT)
         ]
     )
+
+    chain = {
+        "content": attrgetter("content")
+    } | prompt | llm_
     
-    return prompt | llm_ # type: ignore
+    return chain
