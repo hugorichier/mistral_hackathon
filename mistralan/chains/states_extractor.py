@@ -28,9 +28,9 @@ You need to deduct states like emotion, physical symptoms and personality traits
 
 **Task**
 1. Read carefully the full conversation
-2. Identify emotions, personnality traits and symptoms clearly expressed by the patient
+2. Identify emotions, personnality traits and symptoms expressed by the patient
 3. Infer emotions and personnality traits from the patient answers
-4. Review extracted states, ensure uniqueness and completness of information accross the conversation"""
+4. Review extracted emotions, personnality traits and symptoms; ensure uniqueness and completness of information accross the conversation"""
 
 USER_PROMPT = """Conversation:
 {content}"""

@@ -1,19 +1,29 @@
-from typing import TypedDict
+from typing_extensions import TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, TypeAdapter
 from langchain.chat_models.base import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
-from operator import itemgetter
 
 from ..schemas import Event, Produce, Cause, Trigger, ConversationChunk
 from .event_extractor import Events
 from .states_extractor import States
 
+
 class Relations(BaseModel):
     produced_emotions: list[Produce]
     caused_symptoms: list[Cause]
     triggered_traits: list[Trigger]
+
+    def describe(self):
+        print("Relations:")
+        for e in self.produced_emotions:
+            print(e.event_cid, e.emotion_cid)
+        for e in self.caused_symptoms:
+            print(e.event_cid, e.symptom_cid)
+        for e in self.triggered_traits:
+            print(e.event_cid, e.traits_cid)
+
 
 SYSTEM_PROMPT = """You are an expert analyst in psychology.
 
@@ -38,56 +48,54 @@ Conversation Date: {{ chunk.info.date }}
 
 **Extracted Events**
 {% for event in events.events %}
-Common id: {{ event.name }}
+Common id: {{ event.cid }}
 Description: {{ event.description }}
 {%- endfor %}
 
 **Extracted State**
 Emotions:
 {% for e in states.emotional_states %}
-Common id: {{ e.name }}
+Common id: {{ e.cid }}
 Description: {{ e.description }}
 {%- endfor %}
 
 Symptoms:
 {% for s in states.symptoms %}
-Common id: {{ s.name }}
+Common id: {{ s.cid }}
 Description: {{ s.description }}
 {%- endfor %}
 
 Personality:
 {% for t in states.personality_traits %}
-Common id: {{ t.name }}
+Common id: {{ t.cid }}
 Description: {{ t.description }}
 {%- endfor %}
 """
+
 
 class Input(TypedDict):
     chunk: ConversationChunk
     events: Events
     states: States
-    
+
+
 class Output(TypedDict):
     chunk: ConversationChunk
     events: Events
     states: States
     relations: Relations
 
+
+AnalyserOutput = TypeAdapter(Output)
+
+
 def get_linker(llm: BaseChatModel) -> Runnable[Input, Output]:
-    
     llm_ = llm.with_structured_output(Relations)
-    
+
     prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", SYSTEM_PROMPT),
-            ("human", USER_PROMPT)
-        ],
-        template_format="jinja2"
+        [("system", SYSTEM_PROMPT), ("human", USER_PROMPT)], template_format="jinja2"
     )
-    
-    chain = RunnablePassthrough.assign(
-        relations=prompt | llm_
-    )
-    
-    return chain # type: ignore
-    
+
+    chain = RunnablePassthrough.assign(relations=prompt | llm_)
+
+    return chain  # type: ignore

@@ -2,18 +2,22 @@ import time
 from google.cloud import pubsub_v1
 import orjson
 
-from ..environement import GCLOUD_PROJECT_ID, CHUNK_ANALYSER_SUB
+from ..environement import GCLOUD_PROJECT_ID, CHUNK_ANALYSER_SUB, GRAPH_TOPIC
 from ..chains import (
     get_event_extractor,
     get_mistral,
     get_linker,
     get_extractor,
     get_states_extractor,
+    AnalyserOutput,
 )
 from ..schemas import ConversationChunk
 
 subscriber = pubsub_v1.SubscriberClient()
 subscription_path = subscriber.subscription_path(GCLOUD_PROJECT_ID, CHUNK_ANALYSER_SUB)
+
+publisher = pubsub_v1.PublisherClient()
+topic_path = publisher.topic_path(GCLOUD_PROJECT_ID, GRAPH_TOPIC)
 
 llm = get_mistral()
 
@@ -39,9 +43,17 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:  # type: ig
     print("Analysing...")
     start = time.perf_counter()
     result = chain.invoke({"chunk": conversation_chunk})
-    print(f"Analysis done in {time.perf_counter() - start}")
     print(f"State:\n{result['states'].describe()}")
     print(f"Events: {len(result['events'].events)}")
+    for event in result["events"].events:
+        print(event.cid)
+    result["relations"].describe()
+    print(f"Analysis done in {time.perf_counter() - start}")
+    print("Emit message to merger...")
+    data = AnalyserOutput.dump_json(result)
+
+    future = publisher.publish(topic_path, data)
+    future.result()
     message.ack()
 
 

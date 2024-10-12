@@ -9,15 +9,17 @@ from operator import attrgetter
 
 from ..schemas import Event, ConversationChunk
 
+
 class Events(BaseModel):
     events: list[Event]
+
 
 SYSTEM_PROMPT = """You are conversational analyst.
 
 You are extracting events described in a conversation between a psychologist and a patient.
 
 An event is a specific, discrete occurrence that happens at a particular point in time.
-It's short-lived and can be easily identified with a start and an end. Examples include a meeting, a car accident, or a job interview.
+It can be identified with a start and an end date. Examples include a meeting, a car accident, or a job interview.
 Events are usually concrete, one-time actions or incidents.
 
 **Task**
@@ -35,22 +37,23 @@ Conversation Date: {date}
 
 EventExtractor = Runnable[ConversationChunk, Events]
 
+
 def get_event_extractor(llm: BaseChatModel) -> EventExtractor:
-    
     llm_ = llm.with_structured_output(Events)
-    
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", SYSTEM_PROMPT),
-            ("human", USER_PROMPT)
-        ]
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", SYSTEM_PROMPT),
+        ("human", USER_PROMPT),
+    ])
+
+    chain = (
+        {
+            "date": lambda x: x.info.date,
+            "content": attrgetter("content"),
+            "patient_name": lambda x: x.info.patient_name,
+        }
+        | prompt
+        | llm_
     )
-    
-    chain = {
-        "date": lambda x: x.info.date,
-        "content": attrgetter("content"),
-        "patient_name": lambda x: x.info.patient_name
-    } | prompt | llm_
-    
-    return chain # type: ignore
-    
+
+    return chain  # type: ignore
