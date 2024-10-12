@@ -13,11 +13,18 @@ class States(BaseModel):
     personality_traits: list[PersonalityTrait]
     emotional_states: list[EmotionalState]
 
-SYSTEM_PROMPT = """You are a assistant for a psychologist during a therapy session. 
-You need to deduct states like emotion, physical symptoms and personality traits from what the patient says. 
-If you cannot deduct one of these from the prompt give None values."""
+SYSTEM_PROMPT = """You are a assistant for a psychologist during a therapy session.
 
-USER_PROMPT = """{content}"""
+You need to deduct states like emotion, physical symptoms and personality traits from what the patient says.
+
+**Task**
+1. Read carefully the full conversation
+2. Identify emotions, personnality traits and symptoms clearly expressed by the patient
+3. Infer emotions and personnality traits from the patient answers
+4. Review extracted states, ensure uniqueness and completness of information accross the conversation"""
+
+USER_PROMPT = """Conversation:
+{content}"""
 
 class Input(TypedDict):
     content: str
@@ -43,4 +50,4 @@ def get_states_extractor(llm: BaseChatModel) -> StateExtractor:
         "content": attrgetter("content")
     } | RunnableLambda(_delay) | prompt | llm_
     
-    return chain
+    return chain # type: ignore

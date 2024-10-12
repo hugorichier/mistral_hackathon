@@ -21,7 +21,7 @@ def get_extractor(
 ):
     chain = RunnablePassthrough.assign(
         **{
-            "event": itemgetter("chunk") | event_extractor,
+            "events": itemgetter("chunk") | event_extractor,
             "states": itemgetter("chunk") | state_extractor
         }
     )

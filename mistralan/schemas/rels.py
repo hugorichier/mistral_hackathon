@@ -15,6 +15,6 @@ class Cause(BaseModel):
     symptom_cid: str = Field(description="Symptom common id.")
 
 class Trigger(BaseModel):
-    """An event the triggers a personnality trait."""
+    """An event that triggers a personnality trait."""
     event_cid: str = Field(description="Source event common id.")
     traits_cid: str = Field(description="Traits common id.")
