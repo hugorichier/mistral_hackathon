@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class Event(BaseModel):
@@ -8,3 +8,10 @@ class Event(BaseModel):
     end_date: str | None = Field(None, description="Reference end day of occuring event.")
     description: str = Field("Short description of the event.")
     participants: list[str] = Field(description="List of participants in the event, can be individuals or groups of people.")
+    
+    
+    @computed_field
+    @property
+    def cid(self):
+        """Common identifier."""
+        return self.name.lower().replace(" ", "_")
