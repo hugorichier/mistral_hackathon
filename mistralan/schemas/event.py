@@ -12,6 +12,6 @@ class Event(BaseModel):
     
     @computed_field
     @property
-    def cid(self):
+    def cid(self) -> str:
         """Common identifier."""
         return self.name.lower().replace(" ", "_")
