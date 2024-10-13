@@ -16,6 +16,14 @@ OPTIONS { indexConfig: {
 }}
 ```
 
+**Vector Index Usage**
+```cypher
+MATCH (m:Event {cid: "friend's_text"})
+CALL db.index.vector.queryNodes('events', 5, m.embedding)
+YIELD node AS event, score
+RETURN event.name AS name, event.desc AS desc, score
+```
+
 **Source Index on Events**
 ```cypher
 CREATE TEXT INDEX event_source IF NOT EXISTS FOR (n:Event) ON (n.source_id)
@@ -30,3 +38,14 @@ gcloud pubsub subscriptions create chunk-analyser --topic conversation-chunk
 gcloud pubsub topics create gcloud pubsub topics create subgraph
 gcloud pubsub subscriptions create graph-merger --topic subgraph
 ```
+# Runing
+
+`docker compose up`
+
+## Requirements
+
+**Mistral API Key**
+A `MISTRAL_API_KEY` should be accessible to docker compose.
+
+**Environement**
+Check the environement.py file for environement vars. Default values shall be correct tho.

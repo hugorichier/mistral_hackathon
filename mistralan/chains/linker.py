@@ -15,15 +15,6 @@ class Relations(BaseModel):
     caused_symptoms: list[Cause]
     triggered_traits: list[Trigger]
 
-    def describe(self):
-        print("Relations:")
-        for e in self.produced_emotions:
-            print(e.event_cid, e.emotion_cid)
-        for e in self.caused_symptoms:
-            print(e.event_cid, e.symptom_cid)
-        for e in self.triggered_traits:
-            print(e.event_cid, e.traits_cid)
-
 
 SYSTEM_PROMPT = """You are an expert analyst in psychology.
 

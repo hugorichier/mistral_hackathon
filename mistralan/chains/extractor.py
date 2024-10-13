@@ -6,8 +6,10 @@ from ..schemas import ConversationChunk
 from langchain_core.runnables import RunnablePassthrough
 from operator import itemgetter
 
+
 class Input(TypedDict):
     chunk: ConversationChunk
+
 
 class Output(TypedDict):
     chunk: ConversationChunk
@@ -15,14 +17,9 @@ class Output(TypedDict):
     states: States
 
 
-def get_extractor(
-    event_extractor: EventExtractor,
-    state_extractor: StateExtractor
-):
-    chain = RunnablePassthrough.assign(
-        **{
-            "events": itemgetter("chunk") | event_extractor,
-            "states": itemgetter("chunk") | state_extractor
-        }
-    )
+def get_extractor(event_extractor: EventExtractor, state_extractor: StateExtractor):
+    chain = RunnablePassthrough.assign(**{
+        "events": itemgetter("chunk") | event_extractor,
+        "states": itemgetter("chunk") | state_extractor,
+    })
     return chain

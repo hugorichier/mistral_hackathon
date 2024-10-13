@@ -1,8 +1,10 @@
 langchain
 langchain-mistralai
+langchain-huggingface
 orjson
 google-api-python-client
 google-cloud-pubsub
 google-cloud-storage
 google-cloud-logging
 jinja2
+neo4j

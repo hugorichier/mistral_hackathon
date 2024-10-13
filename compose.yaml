@@ -2,6 +2,13 @@ services:
   analyser:
     build: .
     command: ["-m", "mistralan.services.analyser"]
+    environment:
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+  merger:
+    build: .
+    command: ["-m", "mistralan.services.graph_merger"]
+    environment:
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
   tei:
     image: "ghcr.io/huggingface/text-embeddings-inference:89-1.5"
     command: --model-id mixedbread-ai/mxbai-embed-large-v1

@@ -1,5 +1,10 @@
 from neo4j import GraphDatabase
 import orjson
+import sys
+import time
+import logging
+from langchain_huggingface.embeddings import HuggingFaceEndpointEmbeddings
+
 
 from ..environement import (
     NEO4J_HOST,
@@ -14,6 +19,10 @@ from ..chains import (
 )
 from ..schemas import Event
 
+logging.basicConfig(stream=sys.stdout)
+logger = logging.getLogger("analyser")
+logger.setLevel(logging.INFO)
+
 subscriber = pubsub_v1.SubscriberClient()
 subscription_path = subscriber.subscription_path(GCLOUD_PROJECT_ID, GRAPH_MERGE_SUB)
 
@@ -26,7 +35,8 @@ EVENT_CREATE = """MERGE (e:Event {
 ON CREATE SET
     e.desc = $event.description,
     e.participants = $event.participants,
-    e.source_id = $source_id
+    e.source_id = $source_id,
+    e.embedding = $event.embedding
 """
 
 PRODUCE_MERGER = """MERGE (t:Emotion {cid: $target.cid})
@@ -60,22 +70,29 @@ GET_DATA = """MATCH (current:Event)-[]->(n)<-[]-(other:Event)
 WHERE current.cid in $ids AND not n:Event return *
 """
 
+time.sleep(10)  # stupid tei healthcheck not working
+embeddings = HuggingFaceEndpointEmbeddings(model="http://tei:80")
+
 
 def callback(message: pubsub_v1.subscriber.message.Message) -> None:  # type: ignore
     with GraphDatabase.driver(NEO4J_HOST, auth=(NEO4J_USER, NEO4J_PASSWORD)) as driver:
         driver.verify_connectivity()
         data = orjson.loads(message.data)
-        print("Received data")
         analysis = AnalyserOutput.validate_python(data)
+        logger.info("=" * 50)
+        logger.info("Analysis received")
         source_id = analysis["chunk"].info.id + "." + str(analysis["chunk"].ts)
         event_map: dict[str, Event] = {}
-        for event in analysis["events"].events:
+        event_batch = [e.name + "\n" + e.description for e in analysis["events"].events]
+        logger.info("Embedding")
+        event_embeddings = embeddings.embed_documents(event_batch)
+        for i, event in enumerate(analysis["events"].events):
             if not event.end_date:
                 event.end_date = ""
-            print("Saving event", event)
+            logger.info(f"Saving event {event}")
             _, _, _ = driver.execute_query(
                 query_=EVENT_CREATE,
-                event=event.model_dump(),
+                event=event.model_dump() | {"embedding": event_embeddings[i]},
                 source_id=source_id,
             )
             event_map[event.cid] = event
@@ -110,13 +127,13 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:  # type: ig
                 rel=triger.model_dump(exclude={"event_cid", "traits_cid"}),
             )
         event_ids = list(event_map.keys())
-        records, _, _ = driver.execute_query(query_=GET_DATA, ids=event_ids)
-    print("Done")
+        _, _, _ = driver.execute_query(query_=GET_DATA, ids=event_ids)
+    logger.info("Done")
     message.ack()
 
 
 streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
-print(f"Listening for messages on {subscription_path}..\n")
+logger.info(f"Listening for messages on {subscription_path}..\n")
 
 with subscriber:
     try:

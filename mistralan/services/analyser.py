@@ -1,6 +1,9 @@
 import time
 from google.cloud import pubsub_v1
 import orjson
+import logging
+import sys
+from langchain_core.runnables import RunnableLambda
 
 from ..environement import GCLOUD_PROJECT_ID, CHUNK_ANALYSER_SUB, GRAPH_TOPIC
 from ..chains import (
@@ -12,6 +15,10 @@ from ..chains import (
     AnalyserOutput,
 )
 from ..schemas import ConversationChunk
+
+logging.basicConfig(stream=sys.stdout)
+logger = logging.getLogger("analyser")
+logger.setLevel(logging.INFO)
 
 subscriber = pubsub_v1.SubscriberClient()
 subscription_path = subscriber.subscription_path(GCLOUD_PROJECT_ID, CHUNK_ANALYSER_SUB)
@@ -28,37 +35,40 @@ extractor = get_extractor(
 )
 linker = get_linker(llm)
 
-chain = extractor | linker
+
+def _sleep(x):
+    time.sleep(5)
+    return x
+
+
+chain = RunnableLambda(_sleep) | extractor | linker
 
 
 def callback(message: pubsub_v1.subscriber.message.Message) -> None:  # type: ignore
     data = orjson.loads(message.data)
     conversation_chunk = ConversationChunk.model_validate(data)
-    print("Chunk Received")
-    print(
-        f"Conversation: {conversation_chunk.info.id}\n",
-        f"Patient: {conversation_chunk.info.patient_name}",
-        f"({conversation_chunk.info.patient_id})",
-    )
-    print("Analysing...")
+    logger.info("=" * 50)
+    logger.info("Chunk Received")
+    logger.info(conversation_chunk.info)
+    logger.info("Analysing...")
     start = time.perf_counter()
     result = chain.invoke({"chunk": conversation_chunk})
-    print(f"State:\n{result['states'].describe()}")
-    print(f"Events: {len(result['events'].events)}")
+    logger.info(f"State:\n{result['states'].describe()}")
+    logger.info(f"Events: {len(result['events'].events)}")
     for event in result["events"].events:
-        print(event.cid)
-    result["relations"].describe()
-    print(f"Analysis done in {time.perf_counter() - start}")
-    print("Emit message to merger...")
+        logger.info(event.cid)
+    logger.info(f"Analysis done in {time.perf_counter() - start}")
+    logger.info("Emit message to merger...")
     data = AnalyserOutput.dump_json(result)
 
     future = publisher.publish(topic_path, data)
     future.result()
     message.ack()
+    logger.info("End")
 
 
 streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
-print(f"Listening for messages on {subscription_path}..\n")
+logger.info(f"Listening for messages on {subscription_path}..\n")
 
 with subscriber:
     try:
@@ -68,3 +78,5 @@ with subscriber:
     except KeyboardInterrupt:
         streaming_pull_future.cancel()  # Trigger the shutdown.
         streaming_pull_future.result()  # Block until the shutdown is complete.
+    except Exception as e:
+        logger.warning(f"Error while processing chunk {e}")

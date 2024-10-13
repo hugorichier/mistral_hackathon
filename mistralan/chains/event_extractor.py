@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel
 from langchain.chat_models.base import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
@@ -24,7 +23,11 @@ Events are usually concrete, one-time actions or incidents.
 **Task**
 1. Read carefully the conversation
 2. Identify specific events that the patient went threw
-3. Extract each of these events, indentifying a start date and a potential end date for each
+3. Extract each of these events with:
+    - a short name
+    - a short yet complete description
+    - a start end
+    - an end date if any
 4. Review the list of events, ensure consistency and uniqueness, delete incomplete or irelevant events
 """
 
