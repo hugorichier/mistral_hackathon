@@ -112,7 +112,7 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:  # type: ig
             )
         for cause in analysis["relations"].caused_symptoms:
             event = event_map.get(cause.event_cid)
-            target = emotion_map.get(cause.symptom_cid)
+            target = symptom_map.get(cause.symptom_cid)
             if event is None or target is None:
                 continue
             _, _, _ = driver.execute_query(
@@ -123,7 +123,7 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:  # type: ig
             )
         for triger in analysis["relations"].triggered_traits:
             event = event_map.get(triger.event_cid)
-            target = emotion_map.get(triger.traits_cid)
+            target = traits_map.get(triger.traits_cid)
             if event is None or target is None:
                 continue
             _, _, _ = driver.execute_query(
