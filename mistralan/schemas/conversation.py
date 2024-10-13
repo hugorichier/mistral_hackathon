@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from datetime import date
 
@@ -8,7 +8,8 @@ class ConversationInfo(BaseModel):
     patient_name: str
     patient_id: str
     date: date
-    
+
+
 class ConversationChunk(BaseModel):
     info: ConversationInfo
     content: str

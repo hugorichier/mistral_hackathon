@@ -1,0 +1,8 @@
+langchain
+langchain-mistralai
+orjson
+google-api-python-client
+google-cloud-pubsub
+google-cloud-storage
+google-cloud-logging
+jinja2
