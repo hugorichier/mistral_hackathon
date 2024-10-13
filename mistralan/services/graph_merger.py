@@ -100,8 +100,10 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:  # type: ig
         symptom_map = {e.cid: e for e in analysis["states"].symptoms}
         traits_map = {e.cid: e for e in analysis["states"].personality_traits}
         for produce in analysis["relations"].produced_emotions:
-            event = event_map[produce.event_cid]
-            target = emotion_map[produce.emotion_cid]
+            event = event_map.get(produce.event_cid)
+            target = emotion_map.get(produce.emotion_cid)
+            if event is None or target is None:
+                continue
             _, _, _ = driver.execute_query(
                 query_=PRODUCE_MERGER,
                 event=event.model_dump(),
@@ -109,8 +111,10 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:  # type: ig
                 rel=produce.model_dump(exclude={"event_cid", "emotion_cid"}),
             )
         for cause in analysis["relations"].caused_symptoms:
-            event = event_map[cause.event_cid]
-            target = symptom_map[cause.symptom_cid]
+            event = event_map.get(cause.event_cid)
+            target = emotion_map.get(cause.symptom_cid)
+            if event is None or target is None:
+                continue
             _, _, _ = driver.execute_query(
                 query_=CAUSE_MERGE,
                 event=event.model_dump(),
@@ -118,8 +122,10 @@ def callback(message: pubsub_v1.subscriber.message.Message) -> None:  # type: ig
                 rel=cause.model_dump(exclude={"event_cid", "symptom_cid"}),
             )
         for triger in analysis["relations"].triggered_traits:
-            event = event_map[triger.event_cid]
-            target = traits_map[triger.traits_cid]
+            event = event_map.get(triger.event_cid)
+            target = emotion_map.get(triger.traits_cid)
+            if event is None or target is None:
+                continue
             _, _, _ = driver.execute_query(
                 query_=TRIGGER_MERGE,
                 event=event.model_dump(),

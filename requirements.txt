@@ -8,3 +8,5 @@ google-cloud-storage
 google-cloud-logging
 jinja2
 neo4j
+streamlit-agraph
+streamlit
