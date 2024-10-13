@@ -2,10 +2,10 @@ from typing_extensions import TypedDict
 
 from pydantic import BaseModel, TypeAdapter
 from langchain.chat_models.base import BaseChatModel
-from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
-from ..schemas import Event, Produce, Cause, Trigger, ConversationChunk
+from ..schemas import Produce, Cause, Trigger, ConversationChunk
 from .event_extractor import Events
 from .states_extractor import States
 

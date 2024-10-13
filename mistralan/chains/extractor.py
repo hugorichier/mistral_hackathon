@@ -3,7 +3,7 @@ from .states_extractor import StateExtractor, States
 from typing import TypedDict
 from ..schemas import ConversationChunk
 
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_core.runnables import RunnablePassthrough
 from operator import itemgetter
 
 class Input(TypedDict):

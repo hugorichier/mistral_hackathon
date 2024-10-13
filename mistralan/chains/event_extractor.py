@@ -1,6 +1,5 @@
-from typing import TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from langchain.chat_models.base import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
